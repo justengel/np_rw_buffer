@@ -32,10 +32,10 @@ if __name__ == "__main__":
 
     setup(
         name="np_rw_buffer",
-        version="1.1.0",
+        version="1.1.1",
         description="Library to help store audio data in a circular buffer.",
-        url="https://github.com/HashSplat/np_rw_buffer",
-        download_url="https://github.com/HashSplat/np_rw_buffer/archive/v1.1.0.tar.gz",
+        url="https://github.com/justengel/np_rw_buffer",
+        download_url="https://github.com/justengel/np_rw_buffer/archive/v1.1.1.tar.gz",
 
         keywords=["buffer", "read write buffer", "ring buffer", 'ring', "circular buffer", "circular"],
 
