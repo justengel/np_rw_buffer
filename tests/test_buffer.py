@@ -235,6 +235,21 @@ def test_growing_write():
     assert len(buffer) == 10, len(buffer)
     assert np.all(buffer.get_data() == np.vstack((d[-1:], d, d, d)))
 
+    # Test writing data larger than the buffer
+    d2large = np.array([[i] for i in range(20)])
+    buffer.growing_write(d2large)
+    assert buffer.maxsize == 10 + len(d2large), str(buffer.maxsize)
+    assert len(buffer) == 10 + len(d2large), len(buffer)
+    assert np.all(buffer.get_data() == np.vstack((d[-1:], d, d, d, d2large)))
+
+    # Test writing data larger than the buffer initial
+    buffer = np_rw_buffer.RingBuffer(10, 1)
+    d2large = np.array([[i] for i in range(20)])
+    buffer.growing_write(d2large)
+    assert buffer.maxsize == len(d2large), str(buffer.maxsize)
+    assert len(buffer) == len(d2large), len(buffer)
+    assert np.all(buffer.get_data() == d2large)
+
 
 def test_read_remaining():
     buffer = np_rw_buffer.RingBuffer(10, 1)

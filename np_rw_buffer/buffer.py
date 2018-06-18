@@ -179,7 +179,8 @@ class RingBuffer(object):
             # Keep the old data and reshape
             old_data = self.get_data()
             self.shape = (self.maxsize + (length - available),) + self.shape[1:]
-            self._write(old_data, len(old_data), False)
+            if len(old_data) > 0:
+                self._write(old_data, len(old_data), False)
 
         self._write(data, length, error=True)
     # end expanding_write
