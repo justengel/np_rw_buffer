@@ -1,3 +1,4 @@
+from .buffer import reshape
 
 __all__ = ['MemoryManager']
 
@@ -29,13 +30,15 @@ class MemoryManager(object):
 
     @property
     def shape(self):
+        """Return the shape of the data."""
         return self._shape
 
     @shape.setter
     def shape(self, shape):
+        """Set the shape of the data."""
         self._shape = shape
         if self.is_active() or not self.free_memory:
-            self._real_buffer.shape = shape
+            reshape(self._real_buffer, shape)
 
     def _write(self, data, length, error, move_start=True):
         """Actually write the data to the numpy array.

@@ -13,7 +13,7 @@ import threading
 from .utils import make_thread_safe
 
 
-__all__ = ["UnderflowError", "get_shape_columns", "get_shape", "RingBuffer", "RingBufferThreadSafe"]
+__all__ = ["UnderflowError", "get_shape_columns", "get_shape", 'reshape', "RingBuffer", "RingBufferThreadSafe"]
 
 
 UnderflowError = ValueError
@@ -37,6 +37,43 @@ def get_shape_columns(shape):
     except (IndexError, TypeError):
         return 0
 # end get_shape_columns
+
+
+def reshape(ring_buffer, shape):
+    """Safely reshape the data.
+
+    Args:
+        ring_buffer (RingBuffer/np.ndarray/np.array): Array to reshape
+        shape (tuple): New shape
+    """
+    try:
+        buffer = ring_buffer._data
+    except AttributeError:
+        buffer = ring_buffer
+
+    new_shape = get_shape(shape)
+    myshape = get_shape(buffer.shape)
+    if new_shape[1] == 0:
+        new_shape = (new_shape[0], 1) + new_shape[2:]
+
+    if new_shape[0] == -1:
+        try:  # Only change the column shape
+            buffer.shape = new_shape
+        except ValueError:  # Change the entire array shape
+            rows = int(np.ceil(myshape[0]/new_shape[1]))
+            new_shape = (rows, ) + new_shape[1:]
+            buffer.resize(new_shape, refcheck=False)
+
+    else:
+        # Force proper sizing
+        buffer.resize(new_shape, refcheck=False)
+
+        # Clear the buffer if it did anything but grow in length
+        # if not (new_shape[0] > myshape[0] and new_shape[1:] == myshape[1:]):
+        try:
+            ring_buffer.clear()
+        except AttributeError:
+            pass
 
 
 def format_write_data(data, mydtype):
@@ -473,27 +510,7 @@ class RingBuffer(object):
     @shape.setter
     def shape(self, new_shape):
         """Set the shape."""
-        new_shape = get_shape(new_shape)
-        myshape = get_shape(self.shape)
-        if new_shape[1] == 0:
-            new_shape = (new_shape[0], 1) + new_shape[2:]
-
-        if new_shape[0] == -1:
-            try:  # Only change the column shape
-                self._data.shape = new_shape
-            except ValueError:  # Change the entire array shape
-                rows = int(np.ceil(myshape[0]/new_shape[1]))
-                new_shape = (rows, ) + new_shape[1:]
-                self._data.resize(new_shape, refcheck=False)
-
-        else:
-            # Force proper sizing
-            self._data.resize(new_shape, refcheck=False)
-
-            # Clear the buffer if it did anything but grow in length
-            # if not (new_shape[0] > myshape[0] and new_shape[1:] == myshape[1:]):
-            self.clear()
-    # end shape
+        reshape(self, new_shape)
 
     @property
     def dtype(self):
