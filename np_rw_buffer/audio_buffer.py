@@ -254,7 +254,6 @@ class AudioFramingBuffer(RingBufferThreadSafe):
             self._length = self._length % self.maxsize
     # end move_end
 
-
     @property
     def shape(self):
         """Return the shape of the data."""
