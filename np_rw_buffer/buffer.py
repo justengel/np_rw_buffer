@@ -104,23 +104,26 @@ class RingBuffer(object):
     """Numpy circular buffer to help store audio data.
 
     Args:
-        length (tuple/int): Length of the buffer.
+        shape (tuple/int): Length of the buffer.
         columns (int)[1]: Columns for the buffer.
         dtype (numpy.dtype)[numpy.float32]: Numpy data type for the buffer.
     """
 
-    def __init__(self, length, columns=1, dtype=np.float32):
+    def __init__(self, shape, columns=None, dtype=np.float32):
         self._start = 0
         self._end = 0
         self._length = 0
         self.lock = threading.RLock()
 
         # Configure the shape (check if the given length was really the shape)
-        shape = (length, columns)
-        if isinstance(length, (tuple, list)):
-            shape = length
-            if columns != 1 and columns > 0:
+        if isinstance(shape, (tuple, list)):
+            shape = shape
+            if columns is not None and columns > 0:
                 shape = (shape[0], columns) + shape[2:]
+        else:
+            if columns is None:
+                columns = 1
+            shape = (shape, columns)
 
         # Force columns
         if get_shape_columns(shape) == 0:
@@ -528,16 +531,16 @@ class RingBuffer(object):
 
 
 class RingBufferThreadSafe(RingBuffer):
-    """Standard numpy circular buffer
+    """Standard numpy circular buffer.
 
     Args:
         length (tuple/int): Length of the buffer.
         columns (int)[1]: Columns for the buffer.
         dtype (numpy.dtype)[numpy.float32]: Numpy data type for the buffer.
     """
-    def __init__(self, length, columns=1, dtype=np.float32):
+    def __init__(self, shape, columns=None, dtype=np.float32):
         self.lock = threading.RLock()
-        super().__init__(length=length, columns=columns, dtype=dtype)
+        super().__init__(shape=shape, columns=columns, dtype=dtype)
     # end constructor
 
     clear = make_thread_safe(RingBuffer.clear)

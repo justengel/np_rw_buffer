@@ -51,7 +51,7 @@ class AudioFramingBuffer(RingBufferThreadSafe):
         self._sample_counter = 0
 
         length = np.ceil(self._sample_rate * self._seconds)
-        super().__init__(length, channels, dtype)
+        super().__init__(shape=(length, channels), dtype=dtype)
     # end constructor
 
     channels = RingBufferThreadSafe.columns
