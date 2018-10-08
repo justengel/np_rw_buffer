@@ -11,6 +11,7 @@ import numpy as np
 import threading
 
 from .utils import make_thread_safe
+from .circular_indexes import get_indexes
 
 
 __all__ = ["UnderflowError", "get_shape_columns", "get_shape", 'reshape', "RingBuffer", "RingBufferThreadSafe"]
@@ -143,7 +144,7 @@ class RingBuffer(object):
 
     def get_data(self):
         """Return the data in the buffer without moving the start pointer."""
-        idxs = self.get_indexes(self._start, self._length)
+        idxs = self.get_indexes(self._start, self._length, self.maxsize)
         return self._data[idxs].copy()
     # end get_data
 
@@ -168,7 +169,7 @@ class RingBuffer(object):
         Raises:
             OverflowError: If error is True and more data is being written then there is space available.
         """
-        idxs = self.get_indexes(self._end, length)
+        idxs = self.get_indexes(self._end, length, self.maxsize)
         self.move_end(length, error, move_start)
         self._data[idxs] = data
 
@@ -265,7 +266,7 @@ class RingBuffer(object):
         if amount == 0 or amount > self._length:
             return self._data[0:0].copy()
 
-        idxs = self.get_indexes(self._start, amount)
+        idxs = self.get_indexes(self._start, amount, self.maxsize)
         self.move_start(amount)
         return self._data[idxs].copy()
     # end read
@@ -285,7 +286,7 @@ class RingBuffer(object):
         if amount == 0:
             return self._data[0:0].copy()
 
-        idxs = self.get_indexes(self._start, amount)
+        idxs = self.get_indexes(self._start, amount, self.maxsize)
         self.move_start(amount)
         return self._data[idxs].copy()
     # end read_remaining
@@ -312,7 +313,7 @@ class RingBuffer(object):
         if amount == 0 or amount > self._length:
             return self._data[0:0].copy()
 
-        idxs = self.get_indexes(self._start, amount)
+        idxs = self.get_indexes(self._start, amount, self.maxsize)
         self.move_start(increment)
         return self._data[idxs].copy()
     # end read_overlap
@@ -360,7 +361,7 @@ class RingBuffer(object):
         skips = (self._length - amount) // update_rate
         if skips > 0:
             self.move_start(update_rate * skips)
-        idxs = self.get_indexes(self._start, amount)
+        idxs = self.get_indexes(self._start, amount, self.maxsize)
         self.move_start(update_rate)
         return self._data[idxs].copy(), skips + 1
     # end read_last
@@ -372,26 +373,7 @@ class RingBuffer(object):
     def __str__(self):
         return self.get_data().__str__()
 
-    def get_indexes(self, start, length):
-        """Return the indexes from the given start position to the given length."""
-        stop = start + length
-
-        # Check roll-over/roll-under
-        if stop > self.maxsize:
-            try:
-                return np.concatenate((np.arange(start, self.maxsize),
-                                       np.arange(0, stop % self.maxsize)))
-            except ZeroDivisionError:
-                return []
-        elif stop < 0:
-            return np.concatenate((np.arange(start, -1, -1),
-                                   np.arange(self.maxsize, self.maxsize-stop, -1)))
-        # get the step
-        try:
-            return slice(start, stop, length//abs(length))
-        except ZeroDivisionError:
-            return slice(start, stop)
-    # end get_indexes
+    get_indexes = staticmethod(get_indexes)
 
     def move_start(self, amount, error=True, limit_amount=True):
         """This is an internal method and should not need to be called by the user.
@@ -559,7 +541,6 @@ class RingBufferThreadSafe(RingBuffer):
     __len__ = make_thread_safe(RingBuffer.__len__)
     __str__ = make_thread_safe(RingBuffer.__str__)
 
-    get_indexes = make_thread_safe(RingBuffer.get_indexes)
     move_start = make_thread_safe(RingBuffer.move_start)
     move_end = make_thread_safe(RingBuffer.move_end)
     sync_length = make_thread_safe(RingBuffer.sync_length)
