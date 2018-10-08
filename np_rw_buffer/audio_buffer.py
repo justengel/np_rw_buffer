@@ -168,7 +168,7 @@ class AudioFramingBuffer(RingBufferThreadSafe):
         #         self.write(self._data[self._end])
         #     except (OverflowError, TypeError, ValueError): pass
 
-        idxs = self.get_indexes(self._start, amount)
+        idxs = self.get_indexes(self._start, amount, self.maxsize)
         self.move_start(amount, error, limit_amount=False)
 
         # Get and Reset the data
