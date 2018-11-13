@@ -306,6 +306,32 @@ def test_read_overlap():
     assert np.all(r == np.vstack((d[2:], d2)))
 
 
+def test_empty():
+    import np_rw_buffer, numpy as np
+
+    # ===== Test writing an empty array =====
+    rb = np_rw_buffer.RingBuffer(shape=(1234, 1))
+    assert len(rb) == 0
+
+    rb.write(np.array([]))  # Write an empty array
+    assert len(rb) == 0, len(rb)
+
+    try:
+        rb.write(np.array([1, 2, 3, 4]))
+        assert np.all(rb.get_data() == np.array([1, 2, 3, 4], dtype=rb.dtype).reshape((-1, 1))), rb.get_data()
+    except OverflowError:
+        raise AssertionError("The buffer should not be full")
+
+    # ===== Test reading an empty array =====
+    rb = np_rw_buffer.RingBuffer(shape=(1234, 1))
+    rb.write(np.array([1, 2, 3, 4]))
+
+    arr = rb.read(0)
+    assert len(arr) == 0, len(arr)
+    assert arr.shape == (0, ) + rb.shape[1:]
+    assert arr.dtype == rb.dtype
+
+
 if __name__ == '__main__':
     test_buffer_control()
     test_move_start_end()
@@ -314,4 +340,5 @@ if __name__ == '__main__':
     test_growing_write()
     test_read_remaining()
     test_read_overlap()
+    test_empty()
     print('All tests finished successfully!')

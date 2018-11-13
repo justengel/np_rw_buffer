@@ -388,7 +388,9 @@ class RingBuffer(object):
             error (bool)[True]: Raise a ValueError else sync the end pointer and length.
             limit_amount (bool)[True]: If True force the amount to be less than or equal to the amount in the buffer.
         """
-        if amount > self._length:
+        if amount == 0:
+            return
+        elif amount > self._length:
             if error:
                 raise UnderflowError("Not enough data in the buffer " + repr(self))
 
@@ -421,7 +423,9 @@ class RingBuffer(object):
         """
         # Check for overflow
         avaliable = self.maxsize - self._length
-        if amount > 0 and amount > avaliable:
+        if amount == 0:
+            return
+        elif amount > 0 and amount > avaliable:
             if error:
                 raise OverflowError("Not enough space in the buffer " + repr(self) +
                                     " " + repr(len(self)) + " < " + repr(amount))
