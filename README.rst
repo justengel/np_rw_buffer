@@ -1,4 +1,5 @@
-# Numpy Read Write Buffer
+Numpy Read Write Buffer
+=======================
 
 This library was created to help store audio data in a numpy array. It allows for writing lists and numpy arrays into a circular buffer. You can read the data from the buffer with overlap to perform smooth FFTs.
 The buffer is a wrapper around a numpy ndarray. It contains a start and end position to keep track of where to read and write the data.
@@ -27,62 +28,64 @@ Buffer Control Functions:
   * get_available_space() - return the amount of data that the buffer can still hold
 
 
-## Example - simple example
+Example - simple example
+------------------------
 Simple reading and writing. See test_buffer for tests and usage.
 
-```python
-import numpy as np
-import np_rw_buffer
+.. code-block:: python
 
-buffer = np_rw_buffer.RingBuffer(10)
+    import numpy as np
+    import np_rw_buffer
 
-buffer.write(np.arange(5))
-r = buffer.read(4)
-assert np.all(r == np.arange(4).reshape((-1, 1)))
+    buffer = np_rw_buffer.RingBuffer(10)
 
-# Not enough data, don't read anything (use read_remaining or get_data)
-d = np.arange(5).reshape((-1, 1))
-buffer.write(d)
-r = buffer.read(10)
-assert len(r) == 0
-assert len(buffer) == 6
+    buffer.write(np.arange(5))
+    r = buffer.read(4)
+    assert np.all(r == np.arange(4).reshape((-1, 1)))
 
-r = buffer.read()
-assert len(r) == 6
-assert np.all(r == np.vstack((d[-1:], d)))
+    # Not enough data, don't read anything (use read_remaining or get_data)
+    d = np.arange(5).reshape((-1, 1))
+    buffer.write(d)
+    r = buffer.read(10)
+    assert len(r) == 0
+    assert len(buffer) == 6
 
-buffer.write(np.arange(6))
-# buffer.write(np.arange(5))  # Raises an OverflowError
-buffer.write(np.arange(5), False)
-```
+    r = buffer.read()
+    assert len(r) == 6
+    assert np.all(r == np.vstack((d[-1:], d)))
+
+    buffer.write(np.arange(6))
+    # buffer.write(np.arange(5))  # Raises an OverflowError
+    buffer.write(np.arange(5), False)
 
 
-## Example - AudioFramingBuffer
+Example - AudioFramingBuffer
+----------------------------
 The AudioFramingBuffer is slightly different from the RingBuffer. It has a sample_rate, seconds, and buffer_delay.
 
 It's main differences are how it reads and writes. The start and end pointers are completely different and decoupled. 
 The start pointer can underrun the end pointer and back fills with 0's. The end pointer can overrun the start pointer.
 
-```python
-import numpy as np
-from np_rw_buffer import AudioFramingBuffer
+.. code-block:: python
 
-buffer = AudioFramingBuffer(2000, 1)
-buffer.write(np.array([(i,) for i in range(10)]))
-# Buffer: [(read ptr)0, 1, 2, 3, 4, 5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0]
-assert buffer._end == 10
-assert buffer._start == 0
+    import numpy as np
+    from np_rw_buffer import AudioFramingBuffer
 
-# [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0] (read ptr at end)
-assert np.all(buffer.read(15) == np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0]).reshape((-1, 1)))
-assert buffer._start == 15
-assert buffer._end == 10
+    buffer = AudioFramingBuffer(2000, 1)
+    buffer.write(np.array([(i,) for i in range(10)]))
+    # Buffer: [(read ptr)0, 1, 2, 3, 4, 5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0]
+    assert buffer._end == 10
+    assert buffer._start == 0
 
-buffer.write(np.array([(i,) for i in range(10)])) # This will write in the position after 19
-# Buffer: [0, 0, 0, 0, 0, 0, 0, 0, 0, (was 9) 0, 0, 1, 2, 3, 4, (read ptr) 5, 6, 7, 8, 9] (write ptr at end)
-assert buffer._end == 20
-assert buffer._start == 15
+    # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0] (read ptr at end)
+    assert np.all(buffer.read(15) == np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0]).reshape((-1, 1)))
+    assert buffer._start == 15
+    assert buffer._end == 10
 
-# [5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0] (read ptr at end)
-assert np.all(buffer.read(10) == np.array([5, 6, 7, 8, 9, 0, 0, 0, 0, 0]).reshape((-1, 1)))
-```
+    buffer.write(np.array([(i,) for i in range(10)])) # This will write in the position after 19
+    # Buffer: [0, 0, 0, 0, 0, 0, 0, 0, 0, (was 9) 0, 0, 1, 2, 3, 4, (read ptr) 5, 6, 7, 8, 9] (write ptr at end)
+    assert buffer._end == 20
+    assert buffer._start == 15
+
+    # [5, 6, 7, 8, 9, (write ptr) 0, 0, 0, 0, 0] (read ptr at end)
+    assert np.all(buffer.read(10) == np.array([5, 6, 7, 8, 9, 0, 0, 0, 0, 0]).reshape((-1, 1)))
