@@ -10,6 +10,8 @@ import os
 import glob
 from setuptools import setup, Extension, find_packages
 
+import numpy
+
 
 def read(fname):
     """Read in a file"""
@@ -39,11 +41,11 @@ if __name__ == "__main__":
 
     # Extensions
     extensions = [
-        # Extension('libname',
-        #           # define_macros=[('MAJOR_VERSION', '1')],
-        #           # extra_compile_args=['-std=c99'],
-        #           sources=['file.c', 'dir/file.c'],
-        #           include_dirs=['./dir'])
+        Extension('np_rw_buffer._circular_indexes',
+                  # define_macros=[('MAJOR_VERSION', '1')],
+                  # extra_compile_args=['-std=c99'],
+                  sources=['src/circular_indexes.c'],
+                  include_dirs=['src', numpy.get_include()]),
         ]
 
     setup(name=name,
