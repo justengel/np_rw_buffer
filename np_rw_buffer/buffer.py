@@ -510,7 +510,7 @@ class RingBuffer(object):
     def dtype(self, dtype):
         try:
             self._data = self._data.astype(dtype)
-        except (AttributeError, ValueError, TypeError):
+        except (AttributeError, ValueError, TypeError, Exception):
             self._data = np.zeros(shape=self.shape, dtype=dtype)
             self.clear()
 # end class RingBuffer
