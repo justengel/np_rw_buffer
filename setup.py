@@ -105,7 +105,7 @@ if __name__ == "__main__":
                                      for pkg in packages if '/' not in pkg and '\\' not in pkg},
 
                     'install_requires': [
-                        'numpy>=1.13.0',
+                        '1.9.1',
                         ],
                     'extras_require': {
                         },
