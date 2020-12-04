@@ -14,6 +14,8 @@ Main Functions:
 Extra Functions to help with the start and end pointers:
   * expanding_write(data, error) - Write data into the buffer. If the data is larger than the buffer expand the buffer
   * growing_write(data) - Write data into the buffer if there is not enough space make the buffer larger
+  * write_value(value, length, error=True, move_start=True) - Write a value into the buffer for the given length. This is more efficient then creating and writing an array of a single value.
+  * write_zeros(length, error=True, move_start=True) - Write Zeros for the given length. This is more efficient then creating and writing an array of zeros.
   * read_remaining(amount) - Read the amount or read all of the data available to read
   * read_overlap(amount, increment) - Read the amount of data given, but only increment the start index by the increment amount. This makes the next read, read some duplicate data (hence overlap)
 

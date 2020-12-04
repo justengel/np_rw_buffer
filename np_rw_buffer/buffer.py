@@ -14,7 +14,7 @@ from .utils import make_thread_safe
 from .circular_indexes import get_indexes
 
 
-__all__ = ["UnderflowError", "get_shape_columns", "get_shape", 'reshape', "RingBuffer", "RingBufferThreadSafe"]
+__all__ = ["UnderflowError", "get_shape_columns", "get_shape", "reshape", "RingBuffer", "RingBufferThreadSafe"]
 
 
 UnderflowError = ValueError
@@ -225,6 +225,40 @@ class RingBuffer(object):
 
         self._write(data, length, error=True)
     # end expanding_write
+
+    def write_value(self, value, length, error=True, move_start=True):
+        """Write a value into the buffer for the given length. This is more efficient then creating and writing an array of a single value.
+
+        Args:
+            value (int/float/object): Value to put in the buffer
+            length (int): Number of blank samples
+            error (bool)[True]: Error on overflow else overrun the start pointer or move the start pointer to prevent
+                overflow (Makes it circular).
+            move_start (bool)[True]: If error is false should overrun occur or should the start pointer move.
+
+        Raises:
+            OverflowError: If the written data will overflow the buffer.
+        """
+        if not error and length > self.maxsize:
+            length = self.maxsize
+
+        idxs = self.get_indexes(self._end, length, self.maxsize)
+        self.move_end(length, error, move_start)
+        self._data[idxs] = value
+
+    def write_zeros(self, length, error=True, move_start=True):
+        """Write zeros into the buffer for the specified length.
+
+        Args:
+            length (int): Number of blank samples
+            error (bool)[True]: Error on overflow else overrun the start pointer or move the start pointer to prevent
+                overflow (Makes it circular).
+            move_start (bool)[True]: If error is false should overrun occur or should the start pointer move.
+
+        Raises:
+            OverflowError: If the written data will overflow the buffer.
+        """
+        self.write_value(0, length, error=error, move_start=move_start)
 
     def write(self, data, error=True):
         """Write data into the buffer.
@@ -535,6 +569,8 @@ class RingBufferThreadSafe(RingBuffer):
 
     expanding_write = make_thread_safe(RingBuffer.expanding_write)
     growing_write = make_thread_safe(RingBuffer.growing_write)
+    write_value = make_thread_safe(RingBuffer.write_value)
+    write_zeros = make_thread_safe(RingBuffer.write_zeros)
     write = make_thread_safe(RingBuffer.write)
 
     read = make_thread_safe(RingBuffer.read)
