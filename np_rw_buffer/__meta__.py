@@ -1,5 +1,5 @@
 name = 'np_rw_buffer'
-version = '1.1.8'
+version = '1.1.9'
 description = 'Library to help store audio data in a circular buffer.'
 url = 'https://github.com/justengel/np_rw_buffer'
 author = 'Justin Engel'
