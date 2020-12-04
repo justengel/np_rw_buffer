@@ -6,6 +6,9 @@ See history of version control. Python C tuple '_circular_indexes.c' building a 
 import numpy as np
 
 
+__all__ = ['get_indexes']
+
+
 def get_indexes(start, length, maxsize):
     """Return the indexes from the given start position to the given length."""
     stop = start + length

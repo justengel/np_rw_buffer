@@ -9,6 +9,6 @@ except (ImportError, Exception):
     USING_C = False
     c_get_indexes = None
 
-from .buffer import *
-from .audio_buffer import *
-from .manager import *
+from .buffer import UnderflowError, get_shape_columns, get_shape, reshape, RingBuffer, RingBufferThreadSafe
+from .audio_buffer import UnderflowError, AudioFramingBuffer
+from .manager import MemoryManager

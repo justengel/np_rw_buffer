@@ -1,6 +1,9 @@
 import functools
 
 
+__all__ = ['make_thread_safe']
+
+
 def make_thread_safe(lock_varname="lock", func=None):
     """Decorate a function making it threadsafe by using the threading lock that matches the lock_varname.
 

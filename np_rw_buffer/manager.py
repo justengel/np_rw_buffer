@@ -1,5 +1,6 @@
 from .buffer import reshape
 
+
 __all__ = ['MemoryManager']
 
 
