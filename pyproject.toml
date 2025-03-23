@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "numpy>=1.26.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "np_rw_buffer"
+version = "1.2.0"
+description = "Library to help store audio data in a circular buffer"
+readme = "README.rst"
+requires-python = ">= 3.13"
+authors = [
+  {name = "Justin Engel", email = "jtengel08@gmail.com"},
+]
+license = {text = "MIT License"}
+keywords = ["read", "write", "ring", "circular", "buffer"]
+classifiers = [
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 4 - Beta",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Multimedia :: Sound/Audio",
+
+  # Pick your license as you wish (see also "license" above)
+  "License :: OSI Approved :: MIT License",
+
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy>=1.26.0",
+]
+
+
+[project.urls]
+Repository = "https://github.com/justengel/np_rw_buffer"
+
+[tool.setuptools]
+packages = ["np_rw_buffer"]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"np_rw_buffer" = ["*.pyi", "*.c"]

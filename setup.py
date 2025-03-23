@@ -32,8 +32,14 @@ import logging
 from setuptools.command.build_ext import build_ext
 from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
 
-logging.basicConfig()
-log = logging.getLogger(__file__)
+logging.basicConfig(
+    level=logging.INFO,  # Show INFO and above
+    format="%(levelname)s: %(message)s",
+    handlers=[
+        logging.StreamHandler()  # Output to console (stderr)
+    ]
+)
+log = logging.getLogger("np_rw_buffer.setup")
 
 ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOError)
 
@@ -49,19 +55,39 @@ def construct_build_ext(build_ext):
             try:
                 build_ext.run(self)
             except DistutilsPlatformError as x:
-                raise BuildFailed(x)
+                raise BuildFailed(f"Failed to run build_ext: {x}")
 
         def build_extension(self, ext):
             try:
                 build_ext.build_extension(self, ext)
             except ext_errors as x:
-                raise BuildFailed(x)
+                raise BuildFailed(f"Failed to build extension {ext.name}: {x}")
     return WrappedBuildExt
+
+
+def get_extensions():
+    """Dynamically define extensions to handle optional NumPy import."""
+    try:
+        import numpy
+        log.info("NumPy found, attempting to build C extension.")
+        return [
+            Extension(
+                'np_rw_buffer._circular_indexes',
+                # define_macros=[('MAJOR_VERSION', '1')],
+                # extra_compile_args=['-std=c99'],
+                sources=['src/np_rw_buffer/_circular_indexes.c'],
+                include_dirs=['src/np_rw_buffer', numpy.get_include()],
+                extra_compile_args=["-O2"],  # Optional: compiler flags
+            )
+        ]
+    except ImportError:
+        log.warning("NumPy not found; skipping C extension.")
+        return []
 
 
 if __name__ == "__main__":
     # Variables
-    meta = get_meta('np_rw_buffer/__meta__.py')
+    meta = get_meta('src/np_rw_buffer/__meta__.py')
     name = meta['name']
     version = meta['version']
     description = meta['description']
@@ -69,64 +95,52 @@ if __name__ == "__main__":
     author = meta['author']
     author_email = meta['author_email']
     keywords = 'read write ring circular buffer'
-    packages = find_packages(exclude=('tests', 'bin'))
+    packages = find_packages(where="src")
 
-    # Extensions
-    extensions = [
-        Extension('np_rw_buffer._circular_indexes',
-                  # define_macros=[('MAJOR_VERSION', '1')],
-                  # extra_compile_args=['-std=c99'],
-                  sources=['src/circular_indexes.c'],
-                  include_dirs=['src', numpy.get_include()]),
-        ]
-    setup_kwargs = {'name': name,
-                    'version': version,
-                    'description': description,
-                    'long_description': read('README.rst'),
-                    'keywords': keywords,
-                    'url': url,
-                    'download_url': ''.join((url, '/archive/v', version, '.tar.gz')),
-
-                    'author': author,
-                    'author_email': author_email,
-
-                    'license': 'Proprietary',
-                    'platform': 'any',
-                    'classifiers': ['Programming Language :: Python',
-                                    'Programming Language :: Python :: 3',
-                                    'Operating System :: OS Independent'],
-
-                    'scripts': [file for file in glob.iglob('bin/*.py')],  # Run with python -m Scripts.module args
-
-                    # 'ext_modules': extensions,
-                    'packages': packages,
-                    'include_package_data': True,
-                    'package_data': {pkg: ['*', '*/*', '*/*/*', '*/*/*/*', '*/*/*/*/*']
-                                     for pkg in packages if '/' not in pkg and '\\' not in pkg},
-
-                    'install_requires': [
-                        ],
-                    'extras_require': {
-                        },
-                    }
+    setup_kwargs = {
+        'name': name,
+        'version': version,
+        'description': description,
+        'long_description': read('README.rst'),
+        'keywords': keywords,
+        'url': url,
+        'download_url': ''.join((url, '/archive/v', version, '.tar.gz')),
+        'author': author,
+        'author_email': author_email,
+        'platform': 'any',
+        'packages': packages,
+        'package_dir': {'': 'src'},  # Map root to src/
+        'include_package_data': True,
+        'package_data': {
+            'np_rw_buffer': ['*.pyi', '*.c']
+        },
+        'install_requires': ['numpy>=1.26.0'],
+        'extras_require': {},
+    }
 
     # Comment this out if you want the simple setup
     cmd_classes = setup_kwargs.setdefault('cmdclass', {})
     setup_kwargs['cmdclass']['build_ext'] = construct_build_ext(build_ext)
 
-    try:
-        # Run the setup with the c code
-        setup(ext_modules=extensions, **setup_kwargs)
-    except BuildFailed as err:
-        log.warning(err)
-        log.warning("The C extension could not be compiled")
+    # Get extensions dynamically
+    extensions = get_extensions()
 
-        # Remove any previously defined build_ext command class.
-        if 'build_ext' in setup_kwargs['cmdclass']:
-            del setup_kwargs['cmdclass']['build_ext']
-        if 'build_ext' in cmd_classes:
-            del cmd_classes['build_ext']
+    if extensions:
+        try:
+            # Run the setup with the c code
+            setup(ext_modules=extensions, **setup_kwargs)
+            log.info("Successfully built with C extension.")
+        except BuildFailed as err:
+            log.warning(f"C extension build failed: {err}")
 
-        # Run the setup without the c code
+            # Fall back to pure Python
+            if 'build_ext' in setup_kwargs['cmdclass']:
+                del setup_kwargs['cmdclass']['build_ext']
+
+            # Run the setup without the c code
+            setup(**setup_kwargs)
+            log.info("Plain-Python installation succeeded.")
+    else:
+        # No extensions available (e.g., NumPy missing), proceed with pure Python
         setup(**setup_kwargs)
-        log.info("Plain-Python installation succeeded.")
+        log.info("Plain-Python installation succeeded (no C extension attempted).")
